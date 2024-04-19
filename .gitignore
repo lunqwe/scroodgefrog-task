@@ -1,0 +1,5 @@
+config/config/.env
+config/db.sqlite3
+config/config/__pycache__/
+config/events/__pycache__/
+config/events/migrations/__pycache__/
