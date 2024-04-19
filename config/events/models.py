@@ -26,15 +26,15 @@ class CustomUserManager(BaseUserManager):
         if auth_user:
             # if user is authenticated
             token, created = Token.objects.get_or_create(user=auth_user)
-            return {'status': 'success', 'token': token.key, 'status': status.HTTP_201_CREATED}
+            return ({'status': 'success', 'token': token.key}, status.HTTP_202_ACCEPTED)
         else:
             # if password or email are invalid
-            return {'status': 'error', 'detail': "Invalid email or password", 'status': status.HTTP_401_UNAUTHORIZED}
+            return ({'status': 'error', 'detail': "Invalid email or password"}, status.HTTP_401_UNAUTHORIZED)
         
         
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
-    full_name = models.CharField(max_length=255)
+    full_name = models.CharField(max_length=255, default='')
     objects = CustomUserManager()
 
     def __str__(self):
@@ -52,6 +52,7 @@ class Event(models.Model):
     date = models.DateTimeField('Дата і час івенту')
     location = models.TextField('Місце проведення')
     # Також можна реалізувати через models.PointField()
+    attendees = models.ManyToManyField(CustomUser, related_name='registered_events')
 
     def __str__(self) -> str:
         return self.title
