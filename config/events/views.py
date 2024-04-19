@@ -6,8 +6,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .serializers import *
 from .models import CustomUser
 from .filters import EventFilter
-
-
+from django.core.mail import send_mail
+import sendgrid
+from sendgrid.helpers.mail import Mail, From, To
+from config.settings import config
 # function for detailing validation error
 def error_detail(e):
     errors = e.detail
@@ -17,6 +19,25 @@ def error_detail(e):
         error_messages.append(f'{field}: {messages[0].__str__()}')
     
     return error_messages
+
+
+def send_email(user_email, subject, email_content):
+    try:
+        sg = sendgrid.SendGridAPIClient(api_key=config('SENDGRID_API_KEY') )
+        message = Mail(
+                    from_email=From('lunqwe@ukr.net', 'lunqwe'),
+                    to_emails=user_email,
+                    subject=subject,
+                    plain_text_content=email_content
+                )
+
+        response = sg.send(message)
+        return response
+    except Exception as e:
+        print("Error while sending email")
+        print(e)
+        return False
+
 
 # Create your views here.
 class CreateUserView(generics.CreateAPIView):
@@ -136,6 +157,9 @@ class EventRegisterView(generics.CreateAPIView):
             user = get_object_or_404(CustomUser, id=serializer.data.get('user_id'))
             if not event.attendees.filter(id=user.id).exists():
                 event.attendees.add(user)
+                subject = "Event registration success!"
+                message = f"Hello! You have been registered successfully for event: {event.title}!"
+                send_email(user.email, subject=subject, email_content=message)
                 return Response(data={'status': 'success', 'detail': 'User was registered successfully!'}, status=status.HTTP_200_OK)
             else:
                 return Response(data={'status': 'error', 'detail': "User is already registered for this event."}, status=status.HTTP_409_CONFLICT)
